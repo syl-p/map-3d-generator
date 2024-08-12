@@ -1,0 +1,1 @@
+export const CENTER = [2.3634834, 43.2067661]
