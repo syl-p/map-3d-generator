@@ -25,13 +25,14 @@ const { features } = defineProps(["features"]);
 
 const treesFeatures = features
   ? features.filter(
-      (element) => element.properties.natural == "tree" && element.geometry
+      (element: any) => element.properties.natural == "tree" && element.geometry
     )
   : null;
 
 const treeRowsFeatures = features
   ? features.filter(
-      (element) => element.properties.natural == "tree_row" && element.geometry
+      (element: any) =>
+        element.properties.natural == "tree_row" && element.geometry
     )
   : null;
 

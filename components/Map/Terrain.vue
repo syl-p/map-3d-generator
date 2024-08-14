@@ -1,19 +1,18 @@
 <template>
   <TresMesh ref="meshRef" :geometry="geometry">
-    <TresMeshStandardMaterial color="gray" wireframe />
+    <TresMeshStandardMaterial wireframe />
   </TresMesh>
+  <slot></slot>
 </template>
 
 <script setup lang="ts">
 import * as THREE from "three";
 import * as GeoTIFF from "geotiff";
-import { useStore } from "~/store";
-const store = useStore();
-const { setTerrainData } = store;
 
 const rawTiff = await GeoTIFF.fromUrl("./terrain-2.tif");
 const tiffImage = await rawTiff.getImage();
 const meshRef = ref();
+provide("MapTerrainMesh", meshRef);
 
 const start = [2.353936, 43.19904];
 const end = [2.374069, 43.213273];
@@ -30,10 +29,9 @@ const data = await tiffImage.readRasters({
   interleave: true,
 });
 
-setTerrainData(data, tiffImage.getWidth(), tiffImage.getHeight());
-
 let minHeight = Infinity;
 const geometry = new THREE.PlaneGeometry(x, y, x - 1, y - 1);
+console.log("terrain geo", x, y);
 for (let i = 0; i < data.length; i++) {
   const el = data[i];
   const height = (el as number) / 100;

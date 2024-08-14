@@ -15,9 +15,7 @@ import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js"
 const { scene } = await useGLTF("/models/tree/scene.gltf");
 const instancesMesh = ref();
 const { features } = defineProps(["features"]);
-import { useStore } from "~/store";
-const store = useStore();
-const { terrainData } = storeToRefs(store);
+const terrainMesh = inject("MapTerrainMesh");
 
 const instances: Ref<{ id: number; position: number[] }[]> = ref(
   features.map((f, i) => ({
@@ -35,7 +33,6 @@ scene.traverse((child: THREE.Mesh) => {
     const clonedGeometry = child.geometry.clone();
     clonedGeometry.scale(0.008, 0.008, 0.008);
     clonedGeometry.applyMatrix4(child.matrixWorld);
-    clonedGeometry.rotateX(-Math.PI);
     geometries.push(clonedGeometry);
   }
 });
@@ -43,42 +40,84 @@ scene.traverse((child: THREE.Mesh) => {
 const combinedGeometry = BufferGeometryUtils.mergeGeometries(geometries);
 
 watch(
-  [instances, instancesMesh],
+  [instances, instancesMesh, terrainMesh],
   async (newValue) => {
-    if (newValue[0] && newValue[1] && terrainData.value) {
+    if (newValue[0] && newValue[1] && newValue[2].geometry) {
+      const terrainMesh = newValue[2];
+      const raycaster = new THREE.Raycaster();
+
       const dummy = new THREE.Object3D();
       newValue[0].forEach(({ position, id }) => {
         if (position) {
+          // Position
           const objPosition: THREE.Vector3 = new THREE.Vector3(
             position[0],
             0,
             position[1]
           );
 
-          const y = getTerrainHeightAt(
-            objPosition.x,
-            objPosition.z,
-            terrainData.value.data,
-            terrainData.value.x,
-            terrainData.value.y
+          // Fix position
+          const rotationMatrix = new THREE.Matrix4();
+          rotationMatrix.makeRotationAxis(new THREE.Vector3(0, 1, 0), Math.PI); // Rotation autour de l'axe spécifié
+          rotationMatrix.makeRotationAxis(new THREE.Vector3(1, 0, 0), Math.PI);
+          rotationMatrix.makeRotationAxis(new THREE.Vector3(0, 0, 1), Math.PI);
+          const rotatedPoint = objPosition.clone().applyMatrix4(rotationMatrix);
+
+          // Raycasting to set the Y
+          const startPoint = new THREE.Vector3(
+            rotatedPoint.x,
+            500,
+            rotatedPoint.z
           );
+          const direction = new THREE.Vector3(0, -500, 0);
+          raycaster.set(startPoint, direction);
+          const intersects = raycaster.intersectObject(terrainMesh);
+          if (intersects.length > 0) {
+            const intersectPoint = intersects[0].point;
+            const y = intersectPoint.y;
+            rotatedPoint.y = y;
+          }
 
-          objPosition.setY(y);
-          console.log(y);
-
-          const scale = Math.random() * 1.5 + 0.5;
-          dummy.position.copy(objPosition);
-          // dummy.scale.set(scale, scale, scale);
+          // save
+          dummy.position.copy(rotatedPoint);
           dummy.updateMatrix();
           instancesMesh.value.setMatrixAt(id, dummy.matrix);
         }
       });
 
       instancesMesh.value.instanceMatrix.needsUpdate = true;
-      instancesMesh.value.rotateX(Math.PI);
-      instancesMesh.value.rotateY(Math.PI);
     }
   },
   { immediate: true }
 );
+
+function getIndexFromCoords(
+  objPosition: THREE.Vector3,
+  width: number,
+  height: number,
+  widthSegments: number,
+  heightSegments: number
+) {
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  // Convertir les coordonnées (x, z) en indices du tableau
+  const i = Math.round(((objPosition.x + halfWidth) / width) * widthSegments);
+  const j = Math.round(
+    ((objPosition.z + halfHeight) / height) * heightSegments
+  );
+
+  // Correction : S'assurer que les indices sont dans les limites de la grille
+  const iClamped = THREE.MathUtils.clamp(i, 0, widthSegments - 1);
+  const jClamped = THREE.MathUtils.clamp(j, 0, heightSegments - 1);
+
+  // Calculer l'index unidimensionnel avec widthSegments
+  const index = jClamped * widthSegments + iClamped;
+
+  console.log(`i: ${i}, j: ${j}`);
+  console.log(`iClamped: ${iClamped}, jClamped: ${jClamped}`);
+  console.log(`index: ${index}`);
+
+  return index;
+}
 </script>
