@@ -12,29 +12,11 @@
       />
     </template>
   </TresGroup>
-
-  <TresGroup>
-    <MapNaturalTreeRows :features="treeRowsFeatures" v-if="treeRowsFeatures" />
-    <MapNaturalTrees :features="treesFeatures" v-if="treesFeatures" />
-  </TresGroup>
 </template>
 
 <script setup lang="ts">
 import Shape from "~/components/Map/Shape.vue";
 const { features } = defineProps(["features"]);
-
-const treesFeatures = features
-  ? features.filter(
-      (element: any) => element.properties.natural == "tree" && element.geometry
-    )
-  : null;
-
-const treeRowsFeatures = features
-  ? features.filter(
-      (element: any) =>
-        element.properties.natural == "tree_row" && element.geometry
-    )
-  : null;
 
 const shapes = features
   ? features.filter(

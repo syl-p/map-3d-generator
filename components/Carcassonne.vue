@@ -5,6 +5,7 @@
   <TresGroup
     v-if="data && naturalFeatures && buildingsFeatures && waterFeatures"
   >
+    <MapNaturalForest :features="forestFeatures" v-if="naturalFeatures" />
     <MapUrban :features="buildingsFeatures" v-if="buildingsFeatures" />
     <MapWater :features="waterFeatures" v-if="waterFeatures" />
   </TresGroup>
@@ -23,6 +24,17 @@ const treesFeatures = computed(() => {
   return naturalFeatures
     ? naturalFeatures.value.filter(
         (element) => element.properties.natural == "tree" && element.geometry
+      )
+    : null;
+});
+
+const forestFeatures = computed(() => {
+  return naturalFeatures
+    ? naturalFeatures.value.filter(
+        (element) =>
+          (["forest", "meadow"].includes(element.properties.landuse) ||
+            element.properties.leisure == "park") &&
+          element.geometry
       )
     : null;
 });
