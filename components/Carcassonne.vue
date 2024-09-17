@@ -1,11 +1,14 @@
 <template>
-  <MapTerrain>
-    <MapNaturalTrees :features="treesFeatures" v-if="treesFeatures[0]" />
-  </MapTerrain>
+  <TresGroup v-if="forestFeatures?.length > 0">
+    <MapTerrain :forest-features="forestFeatures">
+      <MapNaturalTrees :features="treesFeatures" v-if="treesFeatures[0]" />
+    </MapTerrain>
+  </TresGroup>
+
   <TresGroup
     v-if="data && naturalFeatures && buildingsFeatures && waterFeatures"
   >
-    <MapNaturalForest :features="forestFeatures" v-if="naturalFeatures" />
+    <!-- <MapNaturalForest :features="forestFeatures" v-if="naturalFeatures" /> -->
     <MapUrban :features="buildingsFeatures" v-if="buildingsFeatures" />
     <MapWater :features="waterFeatures" v-if="waterFeatures" />
   </TresGroup>
@@ -25,18 +28,15 @@ const treesFeatures = computed(() => {
     ? naturalFeatures.value.filter(
         (element) => element.properties.natural == "tree" && element.geometry
       )
-    : null;
+    : [];
 });
 
 const forestFeatures = computed(() => {
   return naturalFeatures
-    ? naturalFeatures.value.filter(
-        (element) =>
-          (["forest", "meadow"].includes(element.properties.landuse) ||
-            element.properties.leisure == "park") &&
-          element.geometry
+    ? naturalFeatures.value.filter((element) =>
+        ["forest", "meadow"].includes(element.properties.landuse)
       )
-    : null;
+    : [];
 });
 
 const waterFeatures = computed(() => {

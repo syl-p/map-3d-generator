@@ -6,7 +6,7 @@
 </template>
 
 <script setup lang="ts">
-import genShape from "~/utils/shape";
+import { genShape } from "~/utils/shape";
 const geometry = ref();
 const { coordinates, color, depth } = defineProps([
   "coordinates",
